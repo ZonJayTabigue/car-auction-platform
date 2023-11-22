@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+enum UserTypes {
+  ADMIN
+  CLIENT
+}
+
+enum ListingStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id         String    @id @default(uuid())
+  email      String    @unique
+  password   String
+  first_name String
+  last_name  String
+  type       UserTypes @default(CLIENT)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  cars       Car[]
+  bids       Bid[]
+
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Car {
+  id          String    @id @default(uuid())
+  owner       User      @relation(fields: [owner_id], references: [id])
+  owner_id    String
+  type        String
+  photos      String[]
+  features    String[]
+  description String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  listings    Listing[]
+
+  @@index([createdAt])
+  @@map("cars")
+}
+
+model Listing {
+  id        String        @id @default(uuid())
+  car       Car           @relation(fields: [car_id], references: [id])
+  car_id    String
+  status    ListingStatus @default(INACTIVE)
+  price     Decimal
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  bids      Bid[]
+
+  @@index([createdAt])
+  @@map("listings")
+}
+
+model Bid {
+  id         String   @id @default(uuid())
+  listing    Listing  @relation(fields: [listing_id], references: [id])
+  listing_id String
+  amount     Decimal
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  bidder     User     @relation(fields: [bidder_id], references: [id])
+  bidder_id  String
+
+  @@index([createdAt])
+  @@map("bids")
+}
